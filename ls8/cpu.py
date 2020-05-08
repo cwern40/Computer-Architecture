@@ -10,7 +10,7 @@ class CPU:
         """Construct a new CPU."""
         self.reg = [0] * 8
         self.ram = [0] * 256
-        self.pc = []
+        self.pc = 0
 
     def load(self):
         """Load a program into memory."""
@@ -69,20 +69,23 @@ class CPU:
         print()
 
     def run(self):
+        LDI = 0b10000010
+        PRN = 0b01000111
+        HLT = 0b00000001
         current = 0
         running = True
 
         while running:
             command = self.ram[current]
 
-            if command == 0b10000010:
+            if command == LDI:
                 self.reg[self.ram[current + 1]] = self.ram[current + 2]
                 current += 3
 
-            elif command == 0b01000111:
+            elif command == PRN:
                 print(self.reg[self.ram[current + 1]])
                 current += 2
 
-            elif command == 0b00000001:
+            elif command == HLT:
                 running = False
                 current += 1
