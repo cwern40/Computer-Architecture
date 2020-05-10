@@ -71,7 +71,7 @@ add_numbers = [
 ]
 
 # this is where we "load" a program
-memory = add_numbers
+memory = [0] * 256
 
 
 
@@ -80,7 +80,24 @@ running = True
 pc = 0
 registers = [0] * 8
 
+def load_program_into_memory():
+    address = 0
+
+    if len(sys.argv) != 2:
+        print("Need proper file name passed")
+        sys.exit(1)
+
+    filename = sys.argv[1]
+    with open(filename) as f:
+        for line in f:
+            if line == '':
+                continue
+            num = int(line)
+            memory[address] = num
+            address += 1
+
 while running:
+    load_program_into_memory()
     # lets receive some instructions, and execute them
     command = memory[pc]
 

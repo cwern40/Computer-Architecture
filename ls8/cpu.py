@@ -11,27 +11,48 @@ class CPU:
         self.reg = [0] * 8
         self.ram = [0] * 256
         self.pc = 0
+        self.branchtable = {}
+        self.branchtable["LDI"] = self.handle_LDI
+        self.branchtable["PRN"] = self.handle_PRN
+        self.branchtable["HLT"] = self.handle_HLT
+        self.branchtable["MUL"] = self.handle_MUL
 
     def load(self):
         """Load a program into memory."""
 
         address = 0
+        self.ram = [0] * 256
 
         # For now, we've just hardcoded a program:
 
-        program = [
-            # From print8.ls8
-            0b10000010,  # LDI R0,8
-            0b00000000,
-            0b00001000,
-            0b01000111,  # PRN R0
-            0b00000000,
-            0b00000001,  # HLT
-        ]
+        # program = [
+        #     # From print8.ls8
+        #     0b10000010,  # LDI R0,8
+        #     0b00000000,
+        #     0b00001000,
+        #     0b01000111,  # PRN R0
+        #     0b00000000,
+        #     0b00000001,  # HLT
+        # ]
 
-        for instruction in program:
-            self.ram[address] = instruction
-            address += 1
+        # for instruction in program:
+        #     self.ram[address] = instruction
+        #     address += 1
+
+        if len(sys.argv) != 2:
+            print("Need proper file name passed")
+            sys.exit(1)
+
+        filename = sys.argv[1]
+        with open(filename) as f:
+            for line in f:
+                if line == '':
+                    continue
+                comment_split = line.split('#')
+                num = comment_split[0].strip()
+                if len(num) > 0:
+                    self.ram[address] = int(num, 2)
+                    address += 1
 
     def ram_read(self, address):
         return self.ram[address]
@@ -45,6 +66,8 @@ class CPU:
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
         # elif op == "SUB": etc
+        elif op == "MUL":
+            self.reg[reg_a] *= self.reg[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -68,24 +91,62 @@ class CPU:
 
         print()
 
+    def handle_LDI(self, current):
+        reg_a = current + 1
+        value = current + 2
+        self.reg[self.ram[reg_a]] = self.ram[value]
+        return True
+
+    def handle_PRN(self, current):
+        value = current + 1
+        print(self.reg[self.ram[value]])
+        return True
+
+    def handle_HLT(self, counter):
+        return False
+
+    def handle_MUL(self, current):
+        reg_a = current + 1
+        reg_b = current + 2
+        self.alu("MUL", self.ram[reg_a], self.ram[reg_b])
+        return True
+
     def run(self):
-        LDI = 0b10000010
-        PRN = 0b01000111
-        HLT = 0b00000001
+        # op codes
+        op_codes = {
+        0b10000010: "LDI",
+        0b01000111: "PRN",
+        0b00000001: "HLT",
+        0b10100010: "MUL",
+        }
         current = 0
         running = True
 
         while running:
             command = self.ram[current]
+            counter = (command >> 6) + 1
 
-            if command == LDI:
-                self.reg[self.ram[current + 1]] = self.ram[current + 2]
-                current += 3
+            running = self.branchtable[op_codes[command]](current)
+            current += counter
 
-            elif command == PRN:
-                print(self.reg[self.ram[current + 1]])
-                current += 2
 
-            elif command == HLT:
-                running = False
-                current += 1
+
+            # if command == LDI:
+            #     reg_a = current + 1
+            #     value = current + 2
+            #     self.reg[self.ram[reg_a]] = self.ram[value]
+            #     current += counter
+
+            # elif command == PRN:
+            #     value = current + 1
+            #     print(self.reg[self.ram[value]])
+            #     current += counter
+
+            # elif command == HLT:
+            #     running = False
+            #     current += counter
+            # elif command == MUL:
+            #     reg_a = current + 1
+            #     reg_b = current + 2
+            #     self.alu("MUL", self.ram[reg_a], self.ram[reg_b])
+            #     current += counter
