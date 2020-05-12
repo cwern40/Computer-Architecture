@@ -11,11 +11,15 @@ class CPU:
         self.reg = [0] * 8
         self.ram = [0] * 256
         self.pc = 0
+        self.SP = 7
+        self.reg[self.SP] = 255
         self.branchtable = {}
         self.branchtable["LDI"] = self.handle_LDI
         self.branchtable["PRN"] = self.handle_PRN
         self.branchtable["HLT"] = self.handle_HLT
         self.branchtable["MUL"] = self.handle_MUL
+        self.branchtable["PUSH"] = self.handle_PUSH
+        self.branchtable["POP"] = self.handle_POP
 
     def load(self):
         """Load a program into memory."""
@@ -111,6 +115,12 @@ class CPU:
         self.alu("MUL", self.ram[reg_a], self.ram[reg_b])
         return True
 
+    def handle_PUSH(self, current):
+        pass
+
+    def handle_POP(self, current):
+        pass
+
     def run(self):
         # op codes
         op_codes = {
@@ -118,6 +128,8 @@ class CPU:
         0b01000111: "PRN",
         0b00000001: "HLT",
         0b10100010: "MUL",
+        0b01000101: "PUSH",
+        0b01000110: "POP",
         }
         current = 0
         running = True
