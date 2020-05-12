@@ -12,7 +12,7 @@ class CPU:
         self.ram = [0] * 256
         self.pc = 0
         self.SP = 7
-        self.reg[self.SP] = 255
+        self.reg[self.SP] = len(self.ram) -1
         self.branchtable = {}
         self.branchtable["LDI"] = self.handle_LDI
         self.branchtable["PRN"] = self.handle_PRN
@@ -116,7 +116,12 @@ class CPU:
         return True
 
     def handle_PUSH(self, current):
-        pass
+        register = self.ram(current + 1)
+        self.reg[self.SP] -= 1
+
+        self.ram[self.reg[self.SP]] = self.reg[register]
+
+        return True
 
     def handle_POP(self, current):
         pass
