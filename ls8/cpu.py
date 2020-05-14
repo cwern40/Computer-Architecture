@@ -12,7 +12,9 @@ class CPU:
         self.ram = [0] * 256
         self.pc = 0
         self.SP = 7
-        self.reg[self.SP] = len(self.ram) -1
+        self.IR = None
+        self.FL = False
+        self.reg[self.SP] = 0xf3
         self.branchtable = {}
         self.branchtable["LDI"] = self.handle_LDI
         self.branchtable["PRN"] = self.handle_PRN
@@ -20,6 +22,9 @@ class CPU:
         self.branchtable["MUL"] = self.handle_MUL
         self.branchtable["PUSH"] = self.handle_PUSH
         self.branchtable["POP"] = self.handle_POP
+        self.branchtable["CALL"] = self.handle_CALL
+        self.branchtable["RET"] = self.handle_RET
+        self.branchtable["ADD"] = self.handle_ADD
 
     def load(self):
         """Load a program into memory."""
@@ -95,36 +100,75 @@ class CPU:
 
         print()
 
-    def handle_LDI(self, current):
-        reg_a = current + 1
-        value = current + 2
+    def handle_LDI(self, counter):
+        reg_a = self.pc + 1
+        value = self.pc + 2
         self.reg[self.ram[reg_a]] = self.ram[value]
+        self.pc += counter
+
         return True
 
-    def handle_PRN(self, current):
-        value = current + 1
+    def handle_PRN(self, counter):
+        value = self.pc + 1
         print(self.reg[self.ram[value]])
+        self.pc += counter
+
         return True
 
     def handle_HLT(self, counter):
         return False
 
-    def handle_MUL(self, current):
-        reg_a = current + 1
-        reg_b = current + 2
+    def handle_MUL(self, counter):
+        reg_a = self.pc + 1
+        reg_b = self.pc + 2
         self.alu("MUL", self.ram[reg_a], self.ram[reg_b])
+        self.pc += counter
+
         return True
 
-    def handle_PUSH(self, current):
-        register = self.ram(current + 1)
+    def handle_ADD(self, counter):
+        reg_a = self.pc + 1
+        reg_b = self.pc + 2
+        self.alu("ADD", self.ram[reg_a], self.ram[reg_b])
+        self.pc += counter
+
+        return True
+
+    def handle_PUSH(self, counter):
+        register = self.ram[self.pc + 1]
         self.reg[self.SP] -= 1
 
         self.ram[self.reg[self.SP]] = self.reg[register]
+        self.pc += counter
 
         return True
 
-    def handle_POP(self, current):
-        pass
+    def handle_POP(self, counter):
+        register = self.ram[self.pc + 1]
+
+        self.reg[register] = self.ram[self.reg[self.SP]]
+        self.reg[self.SP] += 1
+
+        self.pc += counter
+
+        return True
+
+    def handle_CALL(self, counter):
+        register = self.ram[self.pc + 1]
+        self.reg[self.SP] -= 1
+        self.ram[self.reg[self.SP]] = self.pc + counter
+
+        self.pc = self.reg[register]
+
+        return True
+
+
+
+    def handle_RET(self, counter):
+        self.pc = self.ram[self.reg[self.SP]]
+        self.reg[self.SP] += 1
+
+        return True
 
     def run(self):
         # op codes
@@ -135,35 +179,15 @@ class CPU:
         0b10100010: "MUL",
         0b01000101: "PUSH",
         0b01000110: "POP",
+        0b01010000: "CALL",
+        0b00010001: "RET",
+        0b10100000: "ADD",
         }
-        current = 0
-        running = True
+        self.pc = 0
+        self.FL = True
 
-        while running:
-            command = self.ram[current]
-            counter = (command >> 6) + 1
+        while self.FL:
+            self.IR = self.ram[self.pc]
+            counter = (self.IR >> 6) + 1
 
-            running = self.branchtable[op_codes[command]](current)
-            current += counter
-
-
-
-            # if command == LDI:
-            #     reg_a = current + 1
-            #     value = current + 2
-            #     self.reg[self.ram[reg_a]] = self.ram[value]
-            #     current += counter
-
-            # elif command == PRN:
-            #     value = current + 1
-            #     print(self.reg[self.ram[value]])
-            #     current += counter
-
-            # elif command == HLT:
-            #     running = False
-            #     current += counter
-            # elif command == MUL:
-            #     reg_a = current + 1
-            #     reg_b = current + 2
-            #     self.alu("MUL", self.ram[reg_a], self.ram[reg_b])
-            #     current += counter
+            self.FL = self.branchtable[op_codes[self.IR]](counter)
