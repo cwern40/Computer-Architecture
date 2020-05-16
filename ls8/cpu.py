@@ -35,6 +35,7 @@ class CPU:
         self.branchtable["NOT"] = self.handle_NOT
         self.branchtable["SHL"] = self.handle_SHL
         self.branchtable["SHR"] = self.handle_SHR
+        self.branchtable["MOD"] = self.hanlde_MOD
 
 
     def load(self):
@@ -104,9 +105,14 @@ class CPU:
         elif op == "NOT":
             self.reg[reg_a] = ~self.reg[reg_a]
         elif op == "SHL":
-            self.reg[reg_a] = self.reg[reg_a] = self.reg[reg_a] << self.reg[reg_b]
+            self.reg[reg_a] = self.reg[reg_a] << self.reg[reg_b]
         elif op == "SHR":
-            self.reg[reg_a] = self.reg[reg_a] = self.reg[reg_a] >> self.reg[reg_b]
+            self.reg[reg_a] = self.reg[reg_a] >> self.reg[reg_b]
+        elif op == "MOD":
+            if self.reg[reg_b] == 0:
+                raise Exception("The Second Register Cannot Be Zero For This Operation")
+            else:
+                self.reg[reg_a] = self.reg[reg_a] % self.reg[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -278,7 +284,15 @@ class CPU:
     def handle_SHR(self, counter):
         reg_a = self.pc + 1
         reg_b = self.pc + 2
-        self.alu("SHL", self.ram[reg_a], self.ram[reg_b])
+        self.alu("SHR", self.ram[reg_a], self.ram[reg_b])
+        self.pc += counter
+
+        return True
+
+    def hanlde_MOD(self, counter):
+        reg_a = self.pc + 1
+        reg_b = self.pc + 2
+        self.alu("MOD", self.ram[reg_a], self.ram[reg_b])
         self.pc += counter
 
         return True
@@ -306,6 +320,7 @@ class CPU:
         0b01101001: "NOT",
         0b10101100: "SHL",
         0b10101101: "SHR",
+        0b10100100: "MOD",
         }
 
         self.FL = 0b00000000
