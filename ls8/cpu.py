@@ -31,6 +31,8 @@ class CPU:
         self.branchtable["JEQ"] = self.handle_JEQ
         self.branchtable["AND"] = self.handle_AND
         self.branchtable["OR"] = self.handle_OR
+        self.branchtable["XOR"] = self.handle_XOR
+        self.branchtable["NOT"] = self.handle_NOT
 
 
     def load(self):
@@ -76,7 +78,7 @@ class CPU:
     def ram_write(self, address, value):
         self.ram[address] = value
 
-    def alu(self, op, reg_a, reg_b):
+    def alu(self, op, reg_a, reg_b=None):
         """ALU operations."""
 
         if op == "ADD":
@@ -95,6 +97,10 @@ class CPU:
             self.reg[reg_a] = self.reg[reg_a] & self.reg[reg_b]
         elif op == "OR":
             self.reg[reg_a] = self.reg[reg_a] | self.reg[reg_b]
+        elif op == "XOR":
+            self.reg[reg_a] = self.reg[reg_a] ^ self.reg[reg_b]
+        elif op == "NOT":
+            self.reg[reg_a] = ~self.reg[reg_a]
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -240,6 +246,21 @@ class CPU:
 
         return True
 
+    def handle_XOR(self, counter):
+        reg_a = self.pc + 1
+        reg_b = self.pc + 2
+        self.alu("XOR", self.ram[reg_a], self.ram[reg_b])
+        self.pc += counter
+
+        return True
+
+    def handle_NOT(self, counter):
+        reg_a = self.pc + 1
+        self.alu("NOT", self.ram[reg_a])
+        self.pc += counter
+
+        return True
+
 
     def run(self):
         # op codes
@@ -259,6 +280,8 @@ class CPU:
         0b01010101: "JEQ",
         0b10101000: "AND",
         0b10101010: "OR",
+        0b10101011: "XOR",
+        0b01101001: "NOT",
         }
 
         self.FL = 0b00000000
