@@ -34,6 +34,7 @@ class CPU:
         self.branchtable["XOR"] = self.handle_XOR
         self.branchtable["NOT"] = self.handle_NOT
         self.branchtable["SHL"] = self.handle_SHL
+        self.branchtable["SHR"] = self.handle_SHR
 
 
     def load(self):
@@ -104,6 +105,8 @@ class CPU:
             self.reg[reg_a] = ~self.reg[reg_a]
         elif op == "SHL":
             self.reg[reg_a] = self.reg[reg_a] = self.reg[reg_a] << self.reg[reg_b]
+        elif op == "SHR":
+            self.reg[reg_a] = self.reg[reg_a] = self.reg[reg_a] >> self.reg[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -272,6 +275,14 @@ class CPU:
 
         return True
 
+    def handle_SHR(self, counter):
+        reg_a = self.pc + 1
+        reg_b = self.pc + 2
+        self.alu("SHL", self.ram[reg_a], self.ram[reg_b])
+        self.pc += counter
+
+        return True
+
 
     def run(self):
         # op codes
@@ -294,6 +305,7 @@ class CPU:
         0b10101011: "XOR",
         0b01101001: "NOT",
         0b10101100: "SHL",
+        0b10101101: "SHR",
         }
 
         self.FL = 0b00000000
