@@ -27,6 +27,7 @@ class CPU:
         self.branchtable["ADD"] = self.handle_ADD
         self.branchtable["CMP"] = self.handle_CMP
         self.branchtable["JMP"] = self.handle_JMP
+        self.branchtable["JNE"] = self.handle_JNE
 
     def load(self):
         """Load a program into memory."""
@@ -193,6 +194,18 @@ class CPU:
 
         return True
 
+    def handle_JNE(self, counter):
+        register = self.ram[self.pc + 1]
+        if self.FL & 0b00000001 == 0:
+            self.pc = self.reg[register]
+
+            return True
+        
+        self.pc += counter
+
+        return True
+
+
     def run(self):
         # op codes
         op_codes = {
@@ -207,6 +220,7 @@ class CPU:
         0b10100000: "ADD",
         0b10100111: "CMP",
         0b01010100: "JMP",
+        0b01010110: "JNE",
         }
 
         self.FL = 0b00000000
