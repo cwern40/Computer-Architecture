@@ -29,6 +29,7 @@ class CPU:
         self.branchtable["JMP"] = self.handle_JMP
         self.branchtable["JNE"] = self.handle_JNE
         self.branchtable["JEQ"] = self.handle_JEQ
+        self.branchtable["AND"] = self.handle_AND
 
 
     def load(self):
@@ -89,6 +90,8 @@ class CPU:
                 self.FL = 0b00000010
             elif self.reg[reg_a] < self.reg[reg_b]:
                 self.FL = 0b00000100
+        elif op == "AND":
+            self.reg[reg_a] = self.reg[reg_a] & self.reg[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -218,6 +221,14 @@ class CPU:
 
         return True
 
+    def handle_AND(self, counter):
+        reg_a = self.pc + 1
+        reg_b = self.pc + 2
+        self.alu("AND", self.ram[reg_a], self.ram[reg_b])
+        self.pc += counter
+
+        return True
+
 
     def run(self):
         # op codes
@@ -235,6 +246,7 @@ class CPU:
         0b01010100: "JMP",
         0b01010110: "JNE",
         0b01010101: "JEQ",
+        0b10101000: "AND",
         }
 
         self.FL = 0b00000000
