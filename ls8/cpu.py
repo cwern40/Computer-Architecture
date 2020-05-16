@@ -28,6 +28,8 @@ class CPU:
         self.branchtable["CMP"] = self.handle_CMP
         self.branchtable["JMP"] = self.handle_JMP
         self.branchtable["JNE"] = self.handle_JNE
+        self.branchtable["JEQ"] = self.handle_JEQ
+
 
     def load(self):
         """Load a program into memory."""
@@ -205,6 +207,17 @@ class CPU:
 
         return True
 
+    def handle_JEQ(self, counter):
+        register = self.ram[self.pc + 1]
+        if self.FL & 0b00000001 == 1:
+            self.pc = self.reg[register]
+
+            return True
+        
+        self.pc += counter
+
+        return True
+
 
     def run(self):
         # op codes
@@ -221,6 +234,7 @@ class CPU:
         0b10100111: "CMP",
         0b01010100: "JMP",
         0b01010110: "JNE",
+        0b01010101: "JEQ",
         }
 
         self.FL = 0b00000000
