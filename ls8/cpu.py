@@ -13,7 +13,7 @@ class CPU:
         self.pc = 0
         self.SP = 7
         self.IR = None
-        self.FL = False
+        self.FL = 0b00000000
         self.reg[self.SP] = 0xf3
         self.branchtable = {}
         self.branchtable["LDI"] = self.handle_LDI
@@ -25,6 +25,7 @@ class CPU:
         self.branchtable["CALL"] = self.handle_CALL
         self.branchtable["RET"] = self.handle_RET
         self.branchtable["ADD"] = self.handle_ADD
+        self.branchtable["CMP"] = self.handle_CMP
 
     def load(self):
         """Load a program into memory."""
@@ -77,6 +78,13 @@ class CPU:
         # elif op == "SUB": etc
         elif op == "MUL":
             self.reg[reg_a] *= self.reg[reg_b]
+        elif op == "CMP":
+            if self.reg[reg_a] == self.reg[reg_b]:
+                self.FL = 0b00000001
+            elif self.reg[reg_a] > self.reg[reg_b]:
+                self.FL = 0b00000010
+            elif self.reg[reg_a] < self.reg[reg_b]:
+                self.FL = 0b00000100
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -134,6 +142,14 @@ class CPU:
 
         return True
 
+    def handle_CMP(self, counter):
+        reg_a = self.pc + 1
+        reg_b = self.pc + 2
+        self.alu("CMP", self.ram[reg_a], self.ram[reg_b])
+        self.pc += counter
+
+        return True
+
     def handle_PUSH(self, counter):
         register = self.ram[self.pc + 1]
         self.reg[self.SP] -= 1
@@ -182,12 +198,15 @@ class CPU:
         0b01010000: "CALL",
         0b00010001: "RET",
         0b10100000: "ADD",
+        0b10100111: "CMP"
         }
-        self.pc = 0
-        self.FL = True
 
-        while self.FL:
+        self.FL = 0b00000000
+        self.pc = 0
+        Running = True
+
+        while Running:
             self.IR = self.ram[self.pc]
             counter = (self.IR >> 6) + 1
 
-            self.FL = self.branchtable[op_codes[self.IR]](counter)
+            Running = self.branchtable[op_codes[self.IR]](counter)
